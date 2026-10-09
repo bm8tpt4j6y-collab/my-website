@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MY QUIZ — Real Friend or Fake Friend?</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@600;700;800;900&display=swap');
+
+:root{
+  --yellow:#ffd400;
+  --blue:#1537ff;
+  --black:#000;
+  --white:#fff;
+  --green:#23d36b;
+  --red:#ff3b4f;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#000;color:#fff;font-family:Montserrat,Arial,sans-serif}
+body{overflow-x:hidden}
+
+/* ---------- TEMPLATE-STYLE STAGE ---------- */
+.stage{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:#000;
+  position:relative;
+  overflow:hidden;
+}
+.stage:before,.stage:after{
+  content:"";
+  position:absolute;
+  width:260px;height:260px;border-radius:50%;
+  background:var(--blue);
+  filter:blur(120px);opacity:.12;
+}
+.stage:before{left:-150px;top:-150px}
+.stage:after{right:-150px;bottom:-150px}
+
+.app{
+  width:min(100%,980px);
+  position:relative;
+  z-index:2;
+}
+
+/* ---------- START ---------- */
+.screen{display:none}
+.screen.active{display:block}
+
+.intro{
+  min-height:700px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+}
+
+.logo{
+  font-family:Anton,Impact,sans-serif;
+  font-size:clamp(58px,11vw,118px);
+  line-height:.78;
+  letter-spacing:1px;
+  color:var(--yellow);
+  -webkit-text-stroke:3px var(--blue);
+  text-shadow:7px 8px 0 var(--blue), 0 16px 30px #000;
+  transform:scale(.92);
+  animation:logoIn .9s cubic-bezier(.2,.9,.2,1) forwards;
+}
+
+.logo small{
+  display:block;
+  font-size:.78em;
+}
+
+@keyframes logoIn{
+  0%{opacity:0;transform:scale(.5) rotate(-4deg)}
+  70%{transform:scale(1.04) rotate(1deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+
+.tagline{
+  margin-top:35px;
+  font-weight:900;
+  font-size:clamp(15px,2.5vw,22px);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:#fff;
+}
+
+.nameBox{
+  margin-top:25px;
+  width:min(420px,90%);
+}
+
+.nameBox input{
+  width:100%;
+  padding:16px 20px;
+  border:0;
+  outline:0;
+  border-radius:40px;
+  text-align:center;
+  font:800 16px Montserrat,sans-serif;
+  background:#fff;
+  color:#111;
+}
+
+.play{
+  margin-top:14px;
+  border:0;
+  background:#fff;
+  color:#111;
+  border-radius:40px;
+  padding:13px 32px;
+  font:900 15px Montserrat,sans-serif;
+  cursor:pointer;
+  transition:.2s;
+  box-shadow:0 6px 0 #cfcfcf;
+}
+.play:hover{transform:translateY(-3px) scale(1.03)}
+.play:active{transform:translateY(3px);box-shadow:0 2px 0 #cfcfcf}
+
+.hint{
+  margin-top:18px;
+  color:#777;
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.error{height:18px;color:#ff5969;font-size:12px;margin-top:8px;font-weight:800}
+
+/* ---------- QUIZ HUD ---------- */
+.quiz{
+  min-height:700px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.hud{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:15px;
+}
+
+.hudPill{
+  background:#fff;
+  color:#111;
+  border-radius:30px;
+  padding:9px 15px;
+  font-size:12px;
+  font-weight:900;
+}
+
+.progress{
+  height:7px;
+  background:#222;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:35px;
+}
+.progress i{
+  display:block;
+  width:0;
+  height:100%;
+  background:var(--yellow);
+  box-shadow:0 0 15px #ffd40088;
+  transition:width .35s ease;
+}
+
+.questionNo{
+  color:var(--yellow);
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+
+.question{
+  font-family:Anton,Impact,sans-serif;
+  font-size:clamp(36px,6vw,66px);
+  line-height:.98;
+  color:#fff;
+  text-transform:uppercase;
+  text-shadow:4px 4px 0 var(--blue);
+  margin-bottom:30px;
+  max-width:900px;
+}
+
+.options{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  width:100%;
+  max-width:760px;
+}
+
+.option{
+  min-height:155px;
+  border:4px solid var(--white);
+  border-radius:24px;
+  background:#111;
+  color:#fff;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+  padding:22px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  transition:.18s;
+}
+.option:hover{
+  transform:translateY(-7px) rotate(-.6deg);
+  border-color:var(--yellow);
+}
+.option:active{transform:translateY(1px)}
+
+.optionIcon{
+  position:absolute;
+  right:28px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:62px;
+  filter:drop-shadow(4px 5px 0 var(--blue));
+}
+.optionNo{
+  position:absolute;
+  left:18px;
+  top:15px;
+  font-size:11px;
+  font-weight:900;
+  color:#aaa;
+  letter-spacing:1px;
+}
+.optionText{
+  position:relative;
+  z-index:2;
+  padding-right:95px;
+  font-family:Anton,Impact,sans-serif;
+  font-size:clamp(25px,4vw,42px);
+  line-height:1;
+  text-transform:uppercase;
+  text-shadow:3px 3px 0 var(--blue);
+}
+
+.correct{
+  border-color:var(--green)!important;
+  background:#063b1d!important;
+  animation:pop .35s ease;
+}
+.wrong{
+  border-color:var(--red)!important;
+  background:#3c0710!important;
+  animation:shake .35s ease;
+}
+@keyframes pop{50%{transform:scale(1.04)}}
+@keyframes shake{
+  20%{transform:translateX(-10px)}
+  40%{transform:translateX(10px)}
+  60%{transform:translateX(-7px)}
+  80%{transform:translateX(5px)}
+}
+
+.feedback{
+  min-height:28px;
+  margin-top:18px;
+  font-weight:900;
+  text-align:center;
+  font-size:15px;
+}
+.feedback.good{color:var(--green)}
+.feedback.bad{color:var(--red)}
+
+.timerWrap{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:15px;
+}
+.timer{
+  font-family:Anton,Impact,sans-serif;
+  color:var(--yellow);
+  font-size:24px;
+  min-width:34px;
+}
+.timerBar{
+  flex:1;
+  height:5px;
+  background:#222;
+  border-radius:10px;
+  overflow:hidden;
+}
+.timerBar i{
+  display:block;
+  width:100%;
+  height:100%;
+  background:var(--yellow);
+  transition:width 1s linear;
+}
+
+/* ---------- RESULT ---------- */
+.result{
+  min-height:700px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+}
+
+.resultMini{
+  color:#aaa;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:3px;
+}
+
+.resultTitle{
+  margin:15px 0;
+  font-family:Anton,Impact,sans-serif;
+  font-size:clamp(55px,10vw,110px);
+  line-height:.85;
+  color:var(--yellow);
+  -webkit-text-stroke:2px var(--blue);
+  text-shadow:6px 7px 0 var(--blue);
+}
+
+.finalScore{
+  font-family:Anton,Impact,sans-serif;
+  font-size:90px;
+  line-height:1;
+}
+
+.verdict{
+  margin-top:15px;
+  font-family:Anton,Impact,sans-serif;
+  font-size:clamp(30px,6vw,55px);
+  color:#fff;
+  text-shadow:4px 4px 0 var(--blue);
+}
+
+.resultMsg{
+  max-width:600px;
+  color:#aaa;
+  line-height:1.7;
+  margin:15px auto 25px;
+}
+
+.again{
+  border:0;
+  border-radius:40px;
+  background:#fff;
+  color:#111;
+  padding:13px 28px;
+  font:900 14px Montserrat,sans-serif;
+  cursor:pointer;
+}
+
+/* ---------- MOBILE ---------- */
+@media(max-width:650px){
+  .stage{padding:10px}
+  .intro,.quiz,.result{min-height:650px}
+  .options{flex-direction:column}
+  .option{min-height:145px}
+  .question{font-size:43px}
+  .optionText{padding-right:75px}
+  .optionIcon{right:20px;font-size:52px}
+  .hudPill{font-size:10px;padding:8px 11px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="stage">
+<div class="app">
+
+<!-- ================= START ================= -->
+<section id="startScreen" class="screen active intro">
+
+  <div class="logo">
+    MY<br><small>QUIZ</small>
+  </div>
+
+  <div class="tagline">
+    HOW WELL DO YOU REALLY KNOW ME?
+  </div>
+
+  <div class="nameBox">
+    <input id="nameInput" maxlength="30" placeholder="ENTER YOUR NAME">
+    <div id="error" class="error"></div>
+    <button class="play" onclick="startQuiz()">LET'S PLAY!</button>
+  </div>
+
+  <div class="hint">
+    10 QUESTIONS • 2 OPTIONS • PERFECT 10/10 WINS
+  </div>
+
+</section>
+
+
+<!-- ================= QUIZ ================= -->
+<section id="quizScreen" class="screen quiz">
+
+  <div class="hud">
+    <div class="hudPill" id="playerPill">PLAYER</div>
+    <div class="hudPill" id="scorePill">SCORE: 0</div>
+    <div class="hudPill" id="questionPill">1 / 10</div>
+  </div>
+
+  <div class="progress">
+    <i id="progress"></i>
+  </div>
+
+  <div class="timerWrap">
+    <div class="timer" id="timer">10</div>
+    <div class="timerBar"><i id="timerBar"></i></div>
+  </div>
+
+  <div class="questionNo" id="questionNo">
+    QUESTION 01
+  </div>
+
+  <div class="question" id="question">
+    QUESTION
+  </div>
+
+  <div class="options" id="options"></div>
+
+  <div class="feedback" id="feedback"></div>
+
+</section>
+
+
+<!-- ================= RESULT ================= -->
+<section id="resultScreen" class="screen result">
+
+  <div class="resultMini">QUIZ COMPLETE</div>
+
+  <div class="resultTitle" id="resultTitle">
+    RESULT
+  </div>
+
+  <div class="finalScore" id="finalScore">0 / 10</div>
+
+  <div class="verdict" id="verdict"></div>
+
+  <div class="resultMsg" id="resultMsg"></div>
+
+  <button class="again" onclick="restart()">
+    PLAY AGAIN
+  </button>
+
+</section>
+
+</div>
+</div>
+
+
+<script>
+
+/* =========================================================
+   QUESTIONS
+========================================================= */
+
+const questions = [
+
+  {
+    question:"WHAT DO I PREFER TO EAT?",
+    options:[
+      ["🍕","PIZZA"],
+      ["🍔","BURGER"]
+    ],
+    answer:0
+  },
+
+  {
+    question:"WHERE DO I USUALLY SHOP?",
+    options:[
+      ["👕","SNITCH"],
+      ["🛍️","WESTSIDE"]
+    ],
+    answer:0
+  },
+
+  {
+    question:"WHAT IS MY FAVOURITE COLOUR?",
+    options:[
+      ["🖤","BLACK"],
+      ["❤️","RED"]
+    ],
+    answer:0
+  },
+
+  {
+    question:"WHO IS MY FAVOURITE ARTIST?",
+    options:[
+      ["🎤","SIDHU MOOSEWALA"],
+      ["🎶","KARAN AUJLA"]
+    ],
+    answer:0
+  },
+
+  {
+    question:"WHERE DO I LIKE GOING ON SUNDAYS?",
+    options:[
+      ["🛍️","MALLS"],
+      ["☕","CAFES"]
+    ],
+    answer:0
+  },
+
+  {
+    question:"WHAT IS MY HOBBY?",
+    options:[
+      ["🎬","MOVIES"],
+      ["🍔","FOOD"]
+    ],
+    answer:0
+  },
+
+  {
+    question:"WHAT BEVERAGE DO I PREFER?",
+    options:[
+      ["☕","COLD COFFEE"],
+      ["🥤","DIET COKE"]
+    ],
+    answer:0
+  },
+
+  {
+    question:"WHICH TYPE OF WATCH DO I PREFER?",
+    options:[
+      ["⌚","ANALOG"],
+      ["⌚","DIGITAL"]
+    ],
+    answer:0
+  },
+
+  {
+    question:"WHICH VEHICLE DO I HAVE?",
+    options:[
+      ["🛵","ACTIVA"],
+      ["🛵","DIO"]
+    ],
+    answer:0
+  },
+
+  {
+    question:"WHAT DO I LIKE MORE?",
+    options:[
+      ["🚗","CARS"],
+      ["🏍️","BIKES"]
+    ],
+    answer:0
+  }
+
+];
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let playerName = "";
+let current = 0;
+let correctCount = 0;
+let timer = null;
+let timeLeft = 10;
+let locked = false;
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function show(id){
+  document.querySelectorAll(".screen")
+    .forEach(s => s.classList.remove("active"));
+
+  document.getElementById(id).classList.add("active");
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+function startQuiz(){
+
+  const input =
+    document.getElementById("nameInput");
+
+  playerName =
+    input.value.trim();
+
+  if(!playerName){
+    document.getElementById("error")
+      .textContent =
+      "ENTER YOUR NAME TO PLAY!";
+    return;
+  }
+
+  current = 0;
+  correctCount = 0;
+
+  document.getElementById("playerPill")
+    .textContent =
+    "PLAYER: " + playerName.toUpperCase();
+
+  show("quizScreen");
+
+  loadQuestion();
+}
+
+
+/* =========================================================
+   LOAD QUESTION
+========================================================= */
+
+function loadQuestion(){
+
+  clearInterval(timer);
+
+  locked = false;
+  timeLeft = 10;
+
+  const q =
+    questions[current];
+
+  document.getElementById("questionNo")
+    .textContent =
+    "QUESTION " +
+    String(current + 1).padStart(2,"0");
+
+  document.getElementById("questionPill")
+    .textContent =
+    (current + 1) + " / 10";
+
+  document.getElementById("scorePill")
+    .textContent =
+    "SCORE: " + correctCount;
+
+  document.getElementById("progress")
+    .style.width =
+    ((current) / 10 * 100) + "%";
+
+  document.getElementById("question")
+    .textContent =
+    q.question;
+
+  document.getElementById("feedback")
+    .textContent = "";
+
+  document.getElementById("feedback")
+    .className =
+    "feedback";
+
+  const container =
+    document.getElementById("options");
+
+  container.innerHTML = "";
+
+  q.options.forEach((option,index)=>{
+
+    const card =
+      document.createElement("div");
+
+    card.className = "option";
+
+    card.innerHTML = `
+      <div class="optionNo">
+        OPTION ${index + 1}
+      </div>
+
+      <div class="optionIcon">
+        ${option[0]}
+      </div>
+
+      <div class="optionText">
+        ${option[1]}
+      </div>
+    `;
+
+    card.onclick = () =>
+      chooseAnswer(index,card);
+
+    container.appendChild(card);
+
+  });
+
+  updateTimer();
+
+  timer =
+    setInterval(()=>{
+
+      timeLeft--;
+
+      updateTimer();
+
+      if(timeLeft <= 0){
+        clearInterval(timer);
+        chooseAnswer(-1,null);
+      }
+
+    },1000);
+}
+
+
+/* =========================================================
+   TIMER
+========================================================= */
+
+function updateTimer(){
+
+  document.getElementById("timer")
+    .textContent =
+    timeLeft;
+
+  document.getElementById("timerBar")
+    .style.width =
+    (timeLeft * 10) + "%";
+}
+
+
+/* =========================================================
+   ANSWER
+========================================================= */
+
+function chooseAnswer(selected,card){
+
+  if(locked) return;
+
+  locked = true;
+
+  clearInterval(timer);
+
+  const q =
+    questions[current];
+
+  const all =
+    document.querySelectorAll(".option");
+
+  if(selected === q.answer){
+
+    correctCount++;
+
+    card.classList.add("correct");
+
+    document.getElementById("feedback")
+      .textContent =
+      "✓ CORRECT!";
+
+    document.getElementById("feedback")
+      .className =
+      "feedback good";
+
+  }else{
+
+    if(card)
+      card.classList.add("wrong");
+
+    all[q.answer]
+      .classList.add("correct");
+
+    document.getElementById("feedback")
+      .textContent =
+      selected === -1
+      ? "⏰ TIME'S UP!"
+      : "✕ WRONG ANSWER";
+
+    document.getElementById("feedback")
+      .className =
+      "feedback bad";
+
+  }
+
+  document.getElementById("scorePill")
+    .textContent =
+    "SCORE: " + correctCount;
+
+  setTimeout(()=>{
+
+    current++;
+
+    if(current < questions.length){
+      loadQuestion();
+    }else{
+      finishQuiz();
+    }
+
+  },850);
+}
+
+
+/* =========================================================
+   FINISH
+========================================================= */
+
+function finishQuiz(){
+
+  clearInterval(timer);
+
+  document.getElementById("progress")
+    .style.width = "100%";
+
+  show("resultScreen");
+
+  document.getElementById("finalScore")
+    .textContent =
+    correctCount + " / 10";
+
+  if(correctCount === 10){
+
+    document.getElementById("resultTitle")
+      .textContent =
+      "YOU KNOW ME!";
+
+    document.getElementById("verdict")
+      .textContent =
+      "REAL FRIEND 🏆";
+
+    document.getElementById("resultMsg")
+      .innerHTML =
+      `
+      <b>${escapeHTML(playerName)}</b>,
+      you got every answer right.<br><br>
+      PERFECT SCORE. YOU'RE OFFICIALLY
+      A REAL FRIEND.
+      `;
+
+  }else{
+
+    document.getElementById("resultTitle")
+      .textContent =
+      "NICE TRY!";
+
+    document.getElementById("verdict")
+      .textContent =
+      "FAKE FRIEND 😈";
+
+    document.getElementById("resultMsg")
+      .innerHTML =
+      `
+      <b>${escapeHTML(playerName)}</b>,
+      you scored ${correctCount}/10.<br><br>
+      Only a PERFECT 10/10 makes you
+      a REAL FRIEND!
+      `;
+
+  }
+}
+
+
+/* =========================================================
+   RESTART
+========================================================= */
+
+function restart(){
+
+  clearInterval(timer);
+
+  current = 0;
+  correctCount = 0;
+  playerName = "";
+
+  document.getElementById("nameInput")
+    .value = "";
+
+  document.getElementById("error")
+    .textContent = "";
+
+  show("startScreen");
+}
+
+
+/* Prevent HTML injection in displayed player name */
+function escapeHTML(text){
+
+  return text
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+</script>
+
+</body>
+</html>
